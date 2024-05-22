@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <USB-MIDI.h>
-// #include <MIDI.h>
 
 
 const int PIN_POT = A0;
@@ -10,11 +9,7 @@ const int LED_PINS[7] = { 10, 3, 5, 6, 9, 7, 8 };
 
 int pot_raw_value = 0;
 int pot_prev_value = 0;
-#ifdef ESP32
-int pot_deadband = 4096 / 128;  // 32 ADC counts, for 12-bit ESP32 input
-#else
 int pot_deadband = 1024 / 128;  // 8 ADC counts, for 10-bit ATmega input
-#endif
 
 bool up_state = HIGH;
 bool up_prev_state = HIGH;
@@ -48,16 +43,6 @@ void change_cc(int);
 void update_LEDs();
 
 
-// MIDI_CREATE_DEFAULT_INSTANCE();  // Arduino TTL MIDI, etc.
-
-// MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);  // ESP32 (NodeMCU-32S) UART2 TTL MIDI
-
-// struct CustomBaudRateSettings : public MIDI_NAMESPACE::DefaultSerialSettings {  // ESP32 (NodeMCU-32S) USB-to-serial, for use with Hairless MIDI
-//   static const long BaudRate = 115200;
-// };
-// MIDI_NAMESPACE::SerialMIDI<HardwareSerial, CustomBaudRateSettings> serialMIDI(Serial);
-// MIDI_NAMESPACE::MidiInterface<MIDI_NAMESPACE::SerialMIDI<HardwareSerial, CustomBaudRateSettings>> MIDI((MIDI_NAMESPACE::SerialMIDI<HardwareSerial, CustomBaudRateSettings>&)serialMIDI);
-
 USBMIDI_CREATE_DEFAULT_INSTANCE();  // SparkFun Pro Micro native USB MIDI
 
 
@@ -65,14 +50,10 @@ void setup() {
 /* set pin modes */
     pinMode(PIN_UP_BTN, INPUT_PULLUP);
     pinMode(PIN_DN_BTN, INPUT_PULLUP);
-    for (int i = 0; i < 7; i++) {
-        pinMode(LED_PINS[i], OUTPUT);
-    }
+    for (int i = 0; i < 7; i++) pinMode(LED_PINS[i], OUTPUT);
 
 /* initialize CC values */
-    for (int i = 0; i < 127; i++) {
-        cc_values[i] = 64;
-    }
+    for (int i = 0; i < 127; i++) cc_values[i] = 64;
 
 /* start midi listener */
     MIDI.begin(midi_channel);
@@ -95,11 +76,7 @@ void read_pot() {
     pot_raw_value = analogRead(PIN_POT);
     if (abs(pot_prev_value - pot_raw_value) > pot_deadband) {  // prevent ADC jitter and noise
         pot_prev_value = pot_raw_value;
-        #ifdef ESP32
-        byte pot_new_value = (byte)(pot_raw_value >> 5);  // shift 12-bit to 7 bit resolution
-        #else
         byte pot_new_value = (byte)(pot_raw_value >> 3);  // shift 10-bit to 7 bit resolution
-        #endif
         update_cc_value(pot_new_value);
     }
 }
@@ -121,7 +98,7 @@ void read_buttons() {
     if (up_state && dn_state) {  // debounce and update LED mode
         if (!LED_mode_latch) {
             LED_mode_latch = true;
-            t_mode = millis();
+            t_mode = t;
             change_LED_mode();
             return;
         }
@@ -130,8 +107,8 @@ void read_buttons() {
     }
 
     if ((up_state != up_prev_state) && ((t - t_up) > debounce_period)) {  // debounce and increase CC
-        t_up = t;
         up_prev_state = up_state;
+        t_up = t;
         if (up_state) {
             change_cc(1);
             return;
@@ -139,8 +116,8 @@ void read_buttons() {
     }
 
     if ((dn_state != dn_prev_state) && ((t - t_dn) > debounce_period)) {  // debounce and decrease CC
-        t_dn = t;
         dn_prev_state = dn_state;
+        t_dn = t;
         if (dn_state) {
             change_cc(-1);
             return;
@@ -177,9 +154,7 @@ void change_cc(int inc) {
 void update_LEDs() {
     switch (LED_mode) {
         case CC:  // show 7-bit binary representation of MIDI Control number
-            for (int i = 0; i < 7; i++) {
-                digitalWrite(LED_PINS[i], (cc_active & (1 << i)));
-            }
+            for (int i = 0; i < 7; i++) digitalWrite(LED_PINS[i], (cc_active & (1 << i)));
             break;
 
         case CC_VAL:  // show "dB meter" representation of MIDI Control value
