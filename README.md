@@ -1,7 +1,9 @@
 # EveryFader
 MIDI control change fader with selectable CC number
 
-![EveryFader](<other resources/images/20240605_231747.jpg>)
+<p align="center">
+    <img src="other resources/images/20240605_231747.jpg" height="512" title="EveryFader">
+</p>
 
 - Buttons select MIDI CC number, fader adjusts value for selected CC.
 
