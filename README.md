@@ -2,7 +2,7 @@
 MIDI control change fader with selectable CC number
 
 <p align="center">
-    <img src="other resources/images/20240606_223120.jpg" height="512" title="EveryFader">
+    <img src="other resources/images/20240606_223120.jpg" max-height="512" height="auto" width="auto" title="EveryFader">
 </p>
 
 - Buttons select MIDI CC number, fader adjusts value for selected CC.
